@@ -2,7 +2,7 @@
  /**
   *------
   * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
-  * sevenslex implementation : © <Your name here> <Your email address here>
+  * sevensleximplementation : © <Your name here> <Your email address here>
   * 
   * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
   * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -124,16 +124,12 @@ class sevenslex extends Table
 		// Create cards
         $cards = array ();
 		
-		if (self::isVariant()) {
+		if (true) {
 			foreach ( $this->colors as $color_id => $color ) {
 				// spade, heart, diamond, club
 				for ($value = 2; $value <= 14; $value ++) {
 					//  2, 3, 4, ... K, A
-					if ($value != 7) {
-						$cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 2 );
-					} else {
-						$cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 1 );
-					}
+					$cards [] = array ('type' => $color_id,'type_arg' => $value,'nbr' => 1 );
 				}
 			}
 		} else {
@@ -349,13 +345,24 @@ class sevenslex extends Table
 		
 		
 		
-		// Check if 7, 7 is always playable
-		if ($currentCard['type_arg'] != 7) {
+		// Check if 7 of spades, 7 of spades is always playable
+		if ($currentCard['type_arg'] != 7 || $currentCard['type'] != 1) {
 			
 			$playable = false;
+			$hasPrecedence = false;
+
+			foreach ( $tableCards as $card ) {
+				// Check to see if card is the same number
+				if ($currentCard['type_arg'] == $card['type_arg']) {
+					$hasPrecedence = true;
+				}
+			}
+			if ($currentCard['type'] != 1 && !$hasPrecedence) {
+				$playable = false;
+			}
 			
 			// Check if current card is above or below seven
-			if ($currentCard['type_arg'] > 7 && $currentCard['type_arg'] != 14) {
+			elseif ($currentCard['type_arg'] > 7 && $currentCard['type_arg'] != 14) {
 				$cardsBetween = 0;
 				foreach ( $tableCards as $card ) {
 					//Check if same suit
@@ -635,6 +642,11 @@ class sevenslex extends Table
 		foreach ( $players as $player_id => $player ) {
 			self::dbSetCards($player_id, $this->cards->countCardInLocation( 'hand', $player_id ));
 		}
+		
+		$sevenOfSpades=$this->cards->getCardsOfType(1,7);
+		foreach ( $sevenOfSpades as $seven ) {
+			$this->gamestate->changeActivePlayer($seven ['location_arg']);
+			}
 		
 		$usedCard = self::getCollectionFromDb("SELECT player_id, card_count FROM player", true );
 		self::notifyAllPlayers( "usedCard", '', array( 'usedCard' => $usedCard ) );
